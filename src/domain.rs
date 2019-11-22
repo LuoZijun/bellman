@@ -284,17 +284,22 @@ fn best_fft<E: Engine, T: Group<E>>(
     omega: &E::Fr,
     log_n: u32,
 ) {
-    unsafe {
-        let a_ptr = a.as_ptr() as *const u8;
-        let a_len = std::mem::size_of::<T>() * a.len();
-        let a_bytes = std::slice::from_raw_parts(a_ptr, a_len);
-
-        debug!("FFT params:\na_len: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_len, omega, log_n);
-    }
+    let a_len = std::mem::size_of::<T>() * a.len();
     
+    debug!("FFT params:\na_len: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_len, omega, log_n);
+
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT ...");
+
+        let mut cpu_res = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
+
+        let log_cpus = worker.log_num_cpus();
+        parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
+
+        debug!("GPU Result Len: {:?}  CPU Result Len: {:?}", a.len(), cpu_res.len());
+        debug!("GPU RES == PCPU = {:?}", a == cpu_res);
+        
     } else {
         let log_cpus = worker.log_num_cpus();
         if log_n <= log_cpus {
