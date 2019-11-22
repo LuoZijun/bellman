@@ -291,13 +291,13 @@ fn best_fft<E: Engine, T: Group<E>>(
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT ...");
 
-        let mut cpu_res = a.to_vec();
+        // let mut cpu_res: Vec<T> = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
 
-        let log_cpus = worker.log_num_cpus();
-        parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
-
-        debug!("GPU Result Len: {:?}  CPU Result Len: {:?}", a.len(), cpu_res.len());
+        // let log_cpus = worker.log_num_cpus();
+        // parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
+        
+        // debug!("GPU Result Len: {:?}  CPU Result Len: {:?}", a.len(), cpu_res.len());
         unsafe {
             let aa = std::mem::transmute::<&mut [T], &mut [u8]>(a);
             let bb = std::mem::transmute::<&mut [T], &mut [u8]>(&mut cpu_res);
