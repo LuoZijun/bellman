@@ -289,7 +289,7 @@ fn best_fft<E: Engine, T: Group<E>>(
         let a_len = std::mem::size_of::<T>() * a.len();
         let a_bytes = std::slice::from_raw_parts(a_ptr, a_len);
 
-        debug!("FFT params:\na: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_bytes, omega, log_n);
+        debug!("FFT params:\na_len: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_len, omega, log_n);
     }
     
     if let Some(ref mut k) = kern {
