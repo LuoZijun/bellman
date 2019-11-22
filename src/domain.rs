@@ -284,13 +284,17 @@ fn best_fft<E: Engine, T: Group<E>>(
     omega: &E::Fr,
     log_n: u32,
 ) {
+    debug!("FFT params:\na: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a, omega, log_n);
     if let Some(ref mut k) = kern {
+        debug!("start GPU FFT ...");
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
     } else {
         let log_cpus = worker.log_num_cpus();
         if log_n <= log_cpus {
+            debug!("start CPU Serial FFT ...");
             serial_fft(a, omega, log_n);
         } else {
+            debug!("start CPU Parallel FFT ...");
             parallel_fft(a, worker, omega, log_n, log_cpus);
         }
     }
