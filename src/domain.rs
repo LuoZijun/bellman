@@ -298,8 +298,8 @@ fn best_fft<E: Engine, T: Group<E>>(
         parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
 
         debug!("GPU Result Len: {:?}  CPU Result Len: {:?}", a.len(), cpu_res.len());
-        debug!("GPU RES == PCPU = {:?}", a == cpu_res);
-        
+        debug!("GPU RES == PCPU = {:?}", a == &mut cpu_res);
+
     } else {
         let log_cpus = worker.log_num_cpus();
         if log_n <= log_cpus {
