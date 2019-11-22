@@ -284,11 +284,14 @@ fn best_fft<E: Engine, T: Group<E>>(
     omega: &E::Fr,
     log_n: u32,
 ) {
-    let a_ptr = a.as_ptr() as *const u8;
-    let a_len = std::mem::size_of::<T>() * a.len();
-    let a_bytes = std::slice::from_raw_parts(a_ptr, a_len);
+    unsafe {
+        let a_ptr = a.as_ptr() as *const u8;
+        let a_len = std::mem::size_of::<T>() * a.len();
+        let a_bytes = std::slice::from_raw_parts(a_ptr, a_len);
 
-    debug!("FFT params:\na: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_bytes, omega, log_n);
+        debug!("FFT params:\na: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_bytes, omega, log_n);
+    }
+    
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT ...");
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
