@@ -298,11 +298,11 @@ fn best_fft<E: Engine, T: Group<E>>(
         // parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
         
         // debug!("GPU Result Len: {:?}  CPU Result Len: {:?}", a.len(), cpu_res.len());
-        unsafe {
-            let aa = std::mem::transmute::<&mut [T], &mut [u8]>(a);
-            let bb = std::mem::transmute::<&mut [T], &mut [u8]>(&mut cpu_res);
-            debug!("GPU RES == PCPU = {:?}", aa == bb);
-        }
+        // unsafe {
+        //     let aa = std::mem::transmute::<&mut [T], &mut [u8]>(a);
+        //     let bb = std::mem::transmute::<&mut [T], &mut [u8]>(&mut cpu_res);
+        //     debug!("GPU RES == PCPU = {:?}", aa == bb);
+        // }
     } else {
         let log_cpus = worker.log_num_cpus();
         if log_n <= log_cpus {
