@@ -284,16 +284,19 @@ fn best_fft<E: Engine, T: Group<E>>(
     omega: &E::Fr,
     log_n: u32,
 ) {
+    assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<paired::bls12_381::Fr>());
+    assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<E::Fr>());
+    
     let a_len = std::mem::size_of::<T>() * a.len();
     
     debug!("FFT params:\na_len: {:?}\nomega: {:?}\nlog_n(u32): {:?}", a_len, omega, log_n);
-
+    
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT ...");
-
+        
         // let mut cpu_res: Vec<T> = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
-        
+
         std::thread::sleep(std::time::Duration::from_secs(15));
 
         // let log_cpus = worker.log_num_cpus();
