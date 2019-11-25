@@ -292,12 +292,11 @@ fn best_fft<E: Engine, T: Group<E>>(
     
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT, a_len={} omega={:?} log_n={:?} ...", a_len, omega, log_n);
-        std::thread::sleep(std::time::Duration::from_secs(5));
+        // std::thread::sleep(std::time::Duration::from_secs(5));
         // let mut cpu_res: Vec<T> = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
-
-        std::thread::sleep(std::time::Duration::from_secs(5));
-
+        
+        // std::thread::sleep(std::time::Duration::from_secs(5));
         // let log_cpus = worker.log_num_cpus();
         // parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
         
