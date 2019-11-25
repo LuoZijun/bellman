@@ -297,8 +297,8 @@ fn best_fft<E: Engine, T: Group<E>>(
         // let mut cpu_res: Vec<T> = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
 
-        std::thread::sleep(std::time::Duration::from_secs(15));
-
+        // std::thread::sleep(std::time::Duration::from_secs(15));
+        
         // let log_cpus = worker.log_num_cpus();
         // parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
         
