@@ -162,8 +162,8 @@ where
 
         let max_deg = cmp::min(MAX_RADIX_DEGREE, lgn);
         self.setup_pq(omega, n, max_deg)?;
-
-        self.fft_src_buffer.write(&*ta).enq()?;
+        
+        self.fft_src_buffer.write(&ta).enq()?;
         let mut in_src = true;
         let mut lgp = 0u32;
         while lgp < lgn {
