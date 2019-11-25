@@ -208,13 +208,14 @@ impl<E: Engine, G: Group<E>> EvaluationDomain<E, G> {
     }
 }
 
-pub trait Group<E: ScalarEngine>: Sized + Copy + Clone + Send + Sync {
+pub trait Group<E: ScalarEngine>: Sized + Copy + Clone + Send + Sync + std::fmt::Debug {
     fn group_zero() -> Self;
     fn group_mul_assign(&mut self, by: &E::Fr);
     fn group_add_assign(&mut self, other: &Self);
     fn group_sub_assign(&mut self, other: &Self);
 }
 
+#[derive(Debug)]
 pub struct Point<G: CurveProjective>(pub G);
 
 impl<G: CurveProjective> PartialEq for Point<G> {
@@ -246,6 +247,7 @@ impl<G: CurveProjective> Group<G::Engine> for Point<G> {
     }
 }
 
+#[derive(Debug)]
 pub struct Scalar<E: ScalarEngine>(pub E::Fr);
 
 impl<E: ScalarEngine> PartialEq for Scalar<E> {
@@ -283,10 +285,13 @@ fn best_fft<E: Engine, T: Group<E>>(
     worker: &Worker,
     omega: &E::Fr,
     log_n: u32,
-) {
+) 
+    where T: std::fmt::Debug
+{
     // type Fr = [u64; 4];   // 32 Bytes
     assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<paired::bls12_381::Fr>());
     assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<E::Fr>());
+    debug!("T: {:?}", a[0]);
 
     let a_len = std::mem::size_of::<T>() * a.len();
     
@@ -295,7 +300,7 @@ fn best_fft<E: Engine, T: Group<E>>(
         // std::thread::sleep(std::time::Duration::from_secs(5));
         // let mut cpu_res: Vec<T> = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
-        
+
         // std::thread::sleep(std::time::Duration::from_secs(5));
         // let log_cpus = worker.log_num_cpus();
         // parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
@@ -332,6 +337,8 @@ pub fn gpu_fft<E: Engine, T: Group<E>>(
     // For compatibility/performance reasons we decided to transmute the array to the desired type
     // as it seems safe and needs less modifications in the current structure of Bellman library.
     let a = unsafe { std::mem::transmute::<&mut [T], &mut [E::Fr]>(a) };
+    println!("{:?}", &a[..10]);
+
     kern.radix_fft(a, omega, log_n)?;
     Ok(())
 }
