@@ -191,6 +191,9 @@ where
         aux_assignment: vec![],
     };
 
+    let now = std::time::Instant::now();
+    
+
     prover.alloc_input(|| "", || Ok(E::Fr::one()))?;
 
     circuit.synthesize(&mut prover)?;
@@ -208,7 +211,10 @@ where
     while (1 << log_d) < n {
         log_d += 1;
     }
-
+    
+    let elapsed = now.elapsed();
+    debug!("create_proof elapsed: {:?}ms", elapsed.as_millis());
+    
     let a = {
         let mut fft_kern = match gpu_fft_supported::<E>(log_d) {
             Ok(fft_kern) => Some(fft_kern),

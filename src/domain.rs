@@ -22,6 +22,8 @@ use super::SynthesisError;
 
 use crate::gpu;
 
+
+#[derive(Debug)]
 pub struct EvaluationDomain<E: ScalarEngine, G: Group<E>> {
     coeffs: Vec<G>,
     exp: u32,
@@ -247,7 +249,6 @@ impl<G: CurveProjective> Group<G::Engine> for Point<G> {
     }
 }
 
-#[derive(Debug)]
 pub struct Scalar<E: ScalarEngine>(pub E::Fr);
 
 impl<E: ScalarEngine> PartialEq for Scalar<E> {
@@ -279,12 +280,18 @@ impl<E: ScalarEngine> Group<E> for Scalar<E> {
     }
 }
 
+impl<E: ScalarEngine + std::fmt::Debug> std::fmt::Debug for Scalar<E> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
 fn best_fft<E: Engine, T: Group<E>>(
     kern: &mut Option<gpu::FFTKernel<E>>,
     a: &mut [T],
     worker: &Worker,
     omega: &E::Fr,
-    log_n: u32,
+    log_n: u32, // exp
 ) {
     // type Fr = [u64; 4];   // 32 Bytes
     assert_eq!(std::mem::size_of::<T>(), std::mem::size_of::<paired::bls12_381::Fr>());
@@ -294,18 +301,41 @@ fn best_fft<E: Engine, T: Group<E>>(
     
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT, a_len={} omega={:?} log_n={:?} ...", a_len, omega, log_n);
+
+        use paired::bls12_381::{Bls12, Fr};
+        use std::fs;
+        use std::fs::File;
+
+        let thread_id = std::thread::current().id();
+        let now = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+
+        unsafe {
+            let input: &mut [Fr] = std::mem::transmute::<&mut [T], &mut [Fr]>(a);
+            let input_ptr = input.as_ptr() as *const Fr as *const u8;
+            let input_bytes: &[u8] = std::slice::from_raw_parts(input_ptr, a_len);
+
+            let input_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}.input", thread_id, now);
+            assert!(fs::metadata(&input_filename).is_err());
+            let ret = fs::write(&input_filename, input_bytes);
+            assert!(ret.is_ok());
+        }
+
         // let mut cpu_res: Vec<T> = a.to_vec();
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
-        
-        // let log_cpus = worker.log_num_cpus();
-        // parallel_fft(&mut cpu_res, worker, omega, log_n, log_cpus);
-        
-        // debug!("GPU Result Len: {:?}  CPU Result Len: {:?}", a.len(), cpu_res.len());
-        // unsafe {
-        //     let aa = std::mem::transmute::<&mut [T], &mut [u8]>(a);
-        //     let bb = std::mem::transmute::<&mut [T], &mut [u8]>(&mut cpu_res);
-        //     debug!("GPU RES == PCPU = {:?}", aa == bb);
-        // }
+
+        unsafe {
+            let a_len = std::mem::size_of::<T>() * a.len();
+            let output: &mut [Fr] = std::mem::transmute::<&mut [T], &mut [Fr]>(a);
+            let output_ptr = output.as_ptr() as *const Fr as *const u8;
+            let output_bytes: &[u8] = std::slice::from_raw_parts(output_ptr, a_len);
+
+            let output_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}.output", thread_id, now);
+            assert!(fs::metadata(&output_filename).is_err());
+            let ret = fs::write(&output_filename, output_bytes);
+            assert!(ret.is_ok());
+        }
     } else {
         let log_cpus = worker.log_num_cpus();
         if log_n <= log_cpus {
@@ -332,7 +362,6 @@ pub fn gpu_fft<E: Engine, T: Group<E>>(
     // For compatibility/performance reasons we decided to transmute the array to the desired type
     // as it seems safe and needs less modifications in the current structure of Bellman library.
     let a = unsafe { std::mem::transmute::<&mut [T], &mut [E::Fr]>(a) };
-    println!("{:?}", &a[..10]);
 
     kern.radix_fft(a, omega, log_n)?;
     Ok(())
