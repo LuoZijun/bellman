@@ -320,7 +320,7 @@ fn best_fft<E: Engine, T: Group<E>>(
             let mut input_file = OpenOptions::new()
                 .read(false)
                 .write(true)
-                .create(false)
+                .create(true)
                 .append(false)
                 .open(&input_filename)
                 .unwrap();
@@ -340,7 +340,7 @@ fn best_fft<E: Engine, T: Group<E>>(
             let mut output_file = OpenOptions::new()
                 .read(false)
                 .write(true)
-                .create(false)
+                .create(true)
                 .append(false)
                 .open(&output_filename)
                 .unwrap();
