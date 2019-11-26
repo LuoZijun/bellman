@@ -302,51 +302,51 @@ fn best_fft<E: Engine, T: Group<E>>(
     if let Some(ref mut k) = kern {
         debug!("start GPU FFT, a_len={} omega={:?} log_n={:?} ...", a_len, omega, log_n);
 
-        use paired::bls12_381::{Bls12, Fr};
-        use std::io::Write;
-        use std::fs::{self, File, OpenOptions};
+        // use paired::bls12_381::{Bls12, Fr};
+        // use std::io::Write;
+        // use std::fs::{self, File, OpenOptions};
 
-        let thread_id = std::thread::current().id();
-        let now = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
+        // let thread_id = std::thread::current().id();
+        // let now = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH)
+        //     .unwrap()
+        //     .as_millis();
 
-        unsafe {
-            let input: &mut [Fr] = std::mem::transmute::<&mut [T], &mut [Fr]>(a);
-            let input_ptr = input.as_ptr() as *const Fr as *const u8;
-            let input_bytes: &[u8] = std::slice::from_raw_parts(input_ptr, a_len);
+        // unsafe {
+        //     let input: &mut [Fr] = std::mem::transmute::<&mut [T], &mut [Fr]>(a);
+        //     let input_ptr = input.as_ptr() as *const Fr as *const u8;
+        //     let input_bytes: &[u8] = std::slice::from_raw_parts(input_ptr, a_len);
 
-            let input_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}-omega_{}-exp_{}.input", thread_id, now, omega, log_n);
-            let mut input_file = OpenOptions::new()
-                .read(false)
-                .write(true)
-                .create(true)
-                .append(false)
-                .open(&input_filename)
-                .unwrap();
+        //     let input_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}-omega_{}-exp_{}.input", thread_id, now, omega, log_n);
+        //     let mut input_file = OpenOptions::new()
+        //         .read(false)
+        //         .write(true)
+        //         .create(true)
+        //         .append(false)
+        //         .open(&input_filename)
+        //         .unwrap();
 
-            input_file.write_all(input_bytes).unwrap();
-        }
+        //     input_file.write_all(input_bytes).unwrap();
+        // }
 
         gpu_fft(k, a, omega, log_n).expect("GPU FFT failed!");
 
-        unsafe {
-            let a_len = std::mem::size_of::<T>() * a.len();
-            let output: &mut [Fr] = std::mem::transmute::<&mut [T], &mut [Fr]>(a);
-            let output_ptr = output.as_ptr() as *const Fr as *const u8;
-            let output_bytes: &[u8] = std::slice::from_raw_parts(output_ptr, a_len);
+        // unsafe {
+        //     let a_len = std::mem::size_of::<T>() * a.len();
+        //     let output: &mut [Fr] = std::mem::transmute::<&mut [T], &mut [Fr]>(a);
+        //     let output_ptr = output.as_ptr() as *const Fr as *const u8;
+        //     let output_bytes: &[u8] = std::slice::from_raw_parts(output_ptr, a_len);
 
-            let output_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}-omega_{}-exp_{}.output", thread_id, now, omega, log_n);
-            let mut output_file = OpenOptions::new()
-                .read(false)
-                .write(true)
-                .create(true)
-                .append(false)
-                .open(&output_filename)
-                .unwrap();
+        //     let output_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}-omega_{}-exp_{}.output", thread_id, now, omega, log_n);
+        //     let mut output_file = OpenOptions::new()
+        //         .read(false)
+        //         .write(true)
+        //         .create(true)
+        //         .append(false)
+        //         .open(&output_filename)
+        //         .unwrap();
 
-            output_file.write_all(output_bytes).unwrap();
-        }
+        //     output_file.write_all(output_bytes).unwrap();
+        // }
     } else {
         let log_cpus = worker.log_num_cpus();
         if log_n <= log_cpus {
