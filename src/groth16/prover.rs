@@ -193,13 +193,13 @@ where
 
     let now0 = std::time::Instant::now();
     
-
+    let now = std::time::Instant::now();    
     prover.alloc_input(|| "", || Ok(E::Fr::one()))?;
+    debug!("prover.alloc_input duration elapsed: {:?}ms", now.elapsed().as_millis());
 
     let now = std::time::Instant::now();
     circuit.synthesize(&mut prover)?;
-    let elapsed = now.elapsed();
-    debug!("circuit.synthesize elapsed: {:?}ms", elapsed.as_millis());
+    debug!("circuit.synthesize duration elapsed: {:?}ms", now.elapsed().as_millis());
 
     let now = std::time::Instant::now();
     for i in 0..prover.input_assignment.len() {
@@ -215,9 +215,7 @@ where
     while (1 << log_d) < n {
         log_d += 1;
     }
-    
-    let elapsed = now.elapsed();
-    debug!("prover.enforce elapsed: {:?}ms", elapsed.as_millis());
+    debug!("prover.enforce duration elapsed: {:?}ms", now.elapsed().as_millis());
     
     let now = std::time::Instant::now();
     let a = {
@@ -252,11 +250,9 @@ where
         // TODO: parallelize if it's even helpful
         Arc::new(a.into_iter().map(|s| s.0.into_repr()).collect::<Vec<_>>())
     };
+    debug!("GPU/CPU fft op duration elapsed: {:?}ms", now.elapsed().as_millis());
     
-    let elapsed = now.elapsed();
-    debug!("fft op elapsed: {:?}ms", elapsed.as_millis());
     
-    let now = std::time::Instant::now();
     let mut multiexp_kern = match gpu_multiexp_supported::<E>(n) {
         Ok(multiexp_kern) => Some(multiexp_kern),
         Err(e) => {
@@ -265,6 +261,7 @@ where
         }
     };
 
+    let now = std::time::Instant::now();
     let h = multiexp(
         &worker,
         params.get_h(a.len())?,
@@ -272,6 +269,7 @@ where
         a,
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
 
     // TODO: parallelize if it's even helpful
     let input_assignment = Arc::new(
@@ -289,6 +287,7 @@ where
             .collect::<Vec<_>>(),
     );
 
+    let now = std::time::Instant::now();
     let l = multiexp(
         &worker,
         params.get_l(aux_assignment.len())?,
@@ -296,12 +295,14 @@ where
         aux_assignment.clone(),
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
 
     let a_aux_density_total = prover.a_aux_density.get_total_density();
 
     let (a_inputs_source, a_aux_source) =
         params.get_a(input_assignment.len(), a_aux_density_total)?;
 
+    let now = std::time::Instant::now();
     let a_inputs = multiexp(
         &worker,
         a_inputs_source,
@@ -309,6 +310,9 @@ where
         input_assignment.clone(),
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
+
+    let now = std::time::Instant::now();
     let a_aux = multiexp(
         &worker,
         a_aux_source,
@@ -316,9 +320,8 @@ where
         aux_assignment.clone(),
         &mut None, // GPU kernel option removed until https://github.com/finalitylabs/bellman/issues/1 is resolved
     );
+    debug!("multiexp op (with None) duration elapsed: {:?}ms", now.elapsed().as_millis());
 
-    let elapsed = now.elapsed();
-    debug!("multiexp op elapsed: {:?}ms", elapsed.as_millis());
 
     let b_input_density = Arc::new(prover.b_input_density);
     let b_input_density_total = b_input_density.get_total_density();
@@ -328,6 +331,7 @@ where
     let (b_g1_inputs_source, b_g1_aux_source) =
         params.get_b_g1(b_input_density_total, b_aux_density_total)?;
 
+    let now = std::time::Instant::now();
     let b_g1_inputs = multiexp(
         &worker,
         b_g1_inputs_source,
@@ -335,6 +339,9 @@ where
         input_assignment.clone(),
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
+
+    let now = std::time::Instant::now();
     let b_g1_aux = multiexp(
         &worker,
         b_g1_aux_source,
@@ -342,10 +349,13 @@ where
         aux_assignment.clone(),
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
+
 
     let (b_g2_inputs_source, b_g2_aux_source) =
         params.get_b_g2(b_input_density_total, b_aux_density_total)?;
 
+    let now = std::time::Instant::now();
     let b_g2_inputs = multiexp(
         &worker,
         b_g2_inputs_source,
@@ -353,6 +363,9 @@ where
         input_assignment,
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
+
+    let now = std::time::Instant::now();
     let b_g2_aux = multiexp(
         &worker,
         b_g2_aux_source,
@@ -360,6 +373,7 @@ where
         aux_assignment,
         &mut multiexp_kern,
     );
+    debug!("multiexp op (with Some(multiexp_kern)) duration elapsed: {:?}ms", now.elapsed().as_millis());
 
     if vk.delta_g1.is_zero() || vk.delta_g2.is_zero() {
         // If this element is zero, someone is trying to perform a
@@ -390,15 +404,14 @@ where
     b1_answer.add_assign(&b_g1_aux.wait()?);
     let mut b2_answer = b_g2_inputs.wait()?;
     b2_answer.add_assign(&b_g2_aux.wait()?);
-
+    
     g_b.add_assign(&b2_answer);
     b1_answer.mul_assign(r);
     g_c.add_assign(&b1_answer);
     g_c.add_assign(&h.wait()?);
     g_c.add_assign(&l.wait()?);
     
-    let elapsed = now0.elapsed();
-    debug!("fn create_proof elapsed: {:?}ms", elapsed.as_millis());
+    debug!("fn create_proof elapsed: {:?}ms", now0.elapsed().as_millis());
 
     Ok(Proof {
         a: g_a.into_affine(),
