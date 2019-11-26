@@ -316,7 +316,7 @@ fn best_fft<E: Engine, T: Group<E>>(
             let input_ptr = input.as_ptr() as *const Fr as *const u8;
             let input_bytes: &[u8] = std::slice::from_raw_parts(input_ptr, a_len);
 
-            let input_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}.input", thread_id, now);
+            let input_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}-omega_{}-exp_{}.input", thread_id, now, omega, log_n);
             assert!(fs::metadata(&input_filename).is_err());
             let ret = fs::write(&input_filename, input_bytes);
             assert!(ret.is_ok());
@@ -331,7 +331,7 @@ fn best_fft<E: Engine, T: Group<E>>(
             let output_ptr = output.as_ptr() as *const Fr as *const u8;
             let output_bytes: &[u8] = std::slice::from_raw_parts(output_ptr, a_len);
 
-            let output_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}.output", thread_id, now);
+            let output_filename = format!("/home/dayu/hd/gpu-{:?}-{:?}-omega_{}-exp_{}.output", thread_id, now, omega, log_n);
             assert!(fs::metadata(&output_filename).is_err());
             let ret = fs::write(&output_filename, output_bytes);
             assert!(ret.is_ok());
