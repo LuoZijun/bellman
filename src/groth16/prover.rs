@@ -181,14 +181,14 @@ where
     C: Circuit<E>,
 {
 
-    // unsafe {
-    //     debug!("function create_proof ...");
-    //     use crate::groth16::Parameters;
-    //     use paired::bls12_381::Bls12;
+    unsafe {
+        debug!("function create_proof ...");
+        use crate::groth16::Parameters;
+        use paired::bls12_381::Bls12;
 
-    //     let p = std::mem::transmute::<&P, &Parameters<Bls12>>(&params);
-    //     debug!("create_proof function params arg: {:?}", p);
-    // }
+        let p = std::mem::transmute::<&P, &Parameters<Bls12>>(&params);
+        debug!("create_proof function params arg: {:?}", p);
+    }
 
 
     let mut prover = ProvingAssignment {
