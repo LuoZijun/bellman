@@ -182,9 +182,11 @@ where
 {
 
     unsafe {
-        let p: &crate::groth16::Parameters<paired::bls12_381::Bls12> = std::mem::transmute(&params);
+        use crate::groth16::Parameters;
+        use paired::bls12_381::Bls12;
+
+        let p = std::mem::transmute::<&P, &Parameters<Bls12>>(&params);
         debug!("create_proof function params arg: {:?}", p);
-        
     }
     // println!("{:?}", circuit);
 
