@@ -180,6 +180,14 @@ where
     E: Engine,
     C: Circuit<E>,
 {
+
+    unsafe {
+        let p: &crate::groth16::Parameters<paired::bls12_381::Bls12> = std::mem::transmute(&params);
+        debug!("create_proof function params arg: {:?}", p);
+        
+    }
+    // println!("{:?}", circuit);
+
     let mut prover = ProvingAssignment {
         a_aux_density: DensityTracker::new(),
         b_input_density: DensityTracker::new(),
@@ -404,13 +412,13 @@ where
     b1_answer.add_assign(&b_g1_aux.wait()?);
     let mut b2_answer = b_g2_inputs.wait()?;
     b2_answer.add_assign(&b_g2_aux.wait()?);
-    
+
     g_b.add_assign(&b2_answer);
     b1_answer.mul_assign(r);
     g_c.add_assign(&b1_answer);
     g_c.add_assign(&h.wait()?);
     g_c.add_assign(&l.wait()?);
-    
+
     debug!("fn create_proof elapsed: {:?}ms", now0.elapsed().as_millis());
 
     Ok(Proof {
